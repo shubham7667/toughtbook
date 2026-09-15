@@ -5,8 +5,9 @@ from app.database.connection import connect_db
 from app.database.users import create_user
 from app.database.users import get_user_by_id
 from app.auth.jwt import generate_jwt
-route = APIRouter()
+from fastapi.responses import RedirectResponse
 
+route = APIRouter()
 config = Config(".env")
 
 oauth = OAuth(config)
@@ -48,11 +49,17 @@ async def google_callback(request: Request):
         access_token = generate_jwt(user_id)
     else:
        
-       user_id = user['USER_EMAIL_ID']
+       user_id = user['USER_ID']
        access_token=generate_jwt(user_id)
-    return {
-        "message": "Google login success.",
-        "user": userInfo,
-        'jwt':access_token
-       
-    }
+    response = RedirectResponse(
+        url='http://localhost:5173/feed'
+    )
+    
+    response.set_cookie(
+        key='access_token',
+        value=access_token,
+        secure=False,
+        httponly=True,
+        samesite='lax'
+    )
+    return response

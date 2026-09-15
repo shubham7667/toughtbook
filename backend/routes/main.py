@@ -1,22 +1,41 @@
 from fastapi import FastAPI
-from .route import router
+from .me import router
+from .login import route as login_router
+
 from starlette.middleware.sessions import SessionMiddleware
+from fastapi.middleware.cors import CORSMiddleware
+
 import os
 from dotenv import load_dotenv
-from .login import route as login_router
+
 load_dotenv()
+
 app = FastAPI()
 
-app.include_router(router)
-app.include_router(login_router)
-session_secret = os.getenv('SESSION_SECRET_KEY')
-print(session_secret)
+# CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Session middleware for Google OAuth
+session_secret = os.getenv("SESSION_SECRET_KEY")
+
 app.add_middleware(
     SessionMiddleware,
     secret_key=session_secret
 )
-@app.get('/')
+
+# Routes
+app.include_router(router)
+app.include_router(login_router)
+
+
+@app.get("/")
 def home():
     return {
-        'message': 'hello this is home page.'
-    }           
+        "message": "hello this is home page."
+    }

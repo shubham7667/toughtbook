@@ -1,22 +1,43 @@
-import pymysql
 from app.database.connection import connect_db
 
 
-def get_user_by_id(email:str):
+def get_user_by_id(user_id: str):
     connection = connect_db()
-    cursor = connection.cursor(pymysql.cursors.DictCursor)
+    cursor = connection.cursor()
+
     try:
         cursor.execute(
-            '''
-            SELECT USER_EMAIL_ID, USER_ID
+            """
+            SELECT USER_ID, USER_NAME, USER_PROFILE_PIC, USER_EMAIL_ID
             FROM USER_LOG_DETAILS
             WHERE USER_EMAIL_ID = %s
-            ''',
-           (email,)
-           
+            """,
+            (user_id,)
         )
-        user=cursor.fetchone()
-        return user
+
+        return cursor.fetchone()
+
+    finally:
+        cursor.close()
+        connection.close()
+
+
+def get_user_by_user_id(user_id: str):
+    connection = connect_db()
+    cursor = connection.cursor()
+
+    try:
+        cursor.execute(
+            """
+            SELECT USER_ID, USER_NAME, USER_PROFILE_PIC, USER_EMAIL_ID
+            FROM USER_LOG_DETAILS
+            WHERE USER_ID = %s
+            """,
+            (user_id,)
+        )
+
+        return cursor.fetchone()
+
     finally:
         cursor.close()
         connection.close()
@@ -49,3 +70,4 @@ def create_user(
     finally:
         cursor.close()
         connection.close()
+        

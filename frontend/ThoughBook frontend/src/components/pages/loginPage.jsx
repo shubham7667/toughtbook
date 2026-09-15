@@ -3,10 +3,16 @@ import { useForm } from 'react-hook-form'
 import bg2 from '../../assets/bg2.png'
 
 const LoginPage = () => {
+
   const { register, handleSubmit } = useForm()
 
   const onSubmit = (data) => {
     console.log(data)
+  }
+
+  const handleGoogleLogin = () => {
+    window.location.href =
+      "http://localhost:8000/thoughtbook/login/google"
   }
 
   return (
@@ -18,7 +24,7 @@ const LoginPage = () => {
       {/* Blurred Card Background */}
       <div className="absolute w-[500px] h-[500px] bg-white/30 backdrop-blur-sm rounded-3xl shadow-2xl" />
 
-      {/* Card Content - NOT Blurred */}
+      {/* Card Content */}
       <div className="relative z-10 w-[500px] h-[500px] flex flex-col justify-start items-center gap-10">
 
         <div className="p-[10px] pt-8">
@@ -34,13 +40,12 @@ const LoginPage = () => {
         <div className="flex flex-col justify-center items-center w-full h-full gap-10">
 
           <form
-            method="POST"
             onSubmit={handleSubmit(onSubmit)}
             className="flex flex-col items-center gap-6 w-full"
           >
 
             <input
-              type="text"
+              type="email"
               {...register('email')}
               placeholder="Enter e-mail"
               className="bg-white/80 border border-indigo-400 rounded-xl w-[400px] text-center p-3 outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-500 transition"
@@ -61,8 +66,24 @@ const LoginPage = () => {
 
           </form>
 
-          <p>don't have an account <a href="/signup" className='text-blue-500'>signup</a>/
-          <a href="/google/login" className='text-blue-500'>login with google</a></p>
+          <p>
+            Don't have an account?{' '}
+            <a
+              href="/signup"
+              className="text-blue-500"
+            >
+              Signup
+            </a>
+            {' / '}
+
+            <button
+              type="button"
+              onClick={handleGoogleLogin}
+              className="text-blue-500 hover:text-blue-700"
+            >
+              Login with Google
+            </button>
+          </p>
 
         </div>
 

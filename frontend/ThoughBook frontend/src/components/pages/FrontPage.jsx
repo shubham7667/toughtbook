@@ -77,7 +77,7 @@ const FrontPage = () => {
                         />
 
                         <div className="flex justify-end">
-
+                            
                             <button
                                 type="submit"
                                 className="px-7 py-2.5 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-95 transition duration-200"

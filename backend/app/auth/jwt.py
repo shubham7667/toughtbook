@@ -9,6 +9,8 @@ jwt_secretkey = os.getenv('JWT_SECRET_KEY')
 ALGORITHM='HS256'
 ACESS_TOKEN_EXPIRE_TIME=30
 
+
+
 def generate_jwt(user_id:str)->str:
     expire = datetime.now(timezone.utc)+timedelta(
         minutes=ACESS_TOKEN_EXPIRE_TIME
