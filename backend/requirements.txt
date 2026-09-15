@@ -1,0 +1,21 @@
+fastapi
+uvicorn[standard]
+pymysql
+python-dotenv
+python-jose[cryptography]
+passlib[bcrypt]
+authlib
+httpx
+itsdangerous
+python-multipart
+
+# AI
+langchain
+langchain-groq
+groq
+
+# Testing
+pytest
+
+# authentication
+jwt
