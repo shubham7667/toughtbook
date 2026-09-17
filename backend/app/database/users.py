@@ -9,7 +9,7 @@ def get_user_by_id(user_id: str):
         cursor.execute(
             """
             SELECT USER_ID, USER_NAME, USER_PROFILE_PIC, USER_EMAIL_ID
-            FROM USER_LOG_DETAILS
+            FROM user_log_details
             WHERE USER_EMAIL_ID = %s
             """,
             (user_id,)
@@ -30,7 +30,7 @@ def get_user_by_user_id(user_id: str):
         cursor.execute(
             """
             SELECT USER_ID, USER_NAME, USER_PROFILE_PIC, USER_EMAIL_ID
-            FROM USER_LOG_DETAILS
+            FROM user_log_details
             WHERE USER_ID = %s
             """,
             (user_id,)

@@ -13,7 +13,10 @@ def connect_db():
         password=os.getenv("DB_PASSWORD"),
         database=os.getenv("DB_NAME"),
         port=int(os.getenv("DB_PORT", 3306)),
-        cursorclass=pymysql.cursors.DictCursor
+        cursorclass=pymysql.cursors.DictCursor,
+        ssl={
+            "ca": r"C:\Users\SHUBHAM KUMAR\Mtech\AIML-M.TECH\GENAI\Thought_book_project\ca.pem"
+        }
     )
 
     return connection
