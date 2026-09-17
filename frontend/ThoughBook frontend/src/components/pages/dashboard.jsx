@@ -17,18 +17,10 @@ import {
 const Dashboard = () => {
   const [user, setUser] = useState(null)
   const [thought, setThought] = useState('')
-  const [mood, setMood] = useState('💡 Inspired')
-  const [tagInput, setTagInput] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
-
-  const [thoughts, setThoughts] = useState(() => {
-    try {
-      const savedThoughts = localStorage.getItem('thoughtbook-thoughts')
-      return savedThoughts ? JSON.parse(savedThoughts) : []
-    } catch {
-      return []
-    }
-  })
+  const [posts, setPosts] = useState([])
+  const [isLoadingPosts, setIsLoadingPosts] = useState(true)
+  const [postError, setPostError] = useState('')
 
   useEffect(() => {
     const getUser = async () => {
@@ -49,61 +41,56 @@ const Dashboard = () => {
     getUser()
   }, [])
 
+  const fetchPosts = async () => {
+    setIsLoadingPosts(true)
+    setPostError('')
+
+    try {
+      const response = await fetch('http://localhost:8000/get/post', {
+        credentials: 'include',
+      })
+      const data = await response.json()
+
+      if (!response.ok) throw new Error(data.detail || 'Unable to load posts.')
+      setPosts(data.posts || [])
+    } catch (error) {
+      console.error('Failed to fetch posts:', error)
+      setPostError('We could not load your posts right now.')
+    } finally {
+      setIsLoadingPosts(false)
+    }
+  }
+
   useEffect(() => {
-    localStorage.setItem('thoughtbook-thoughts', JSON.stringify(thoughts))
-  }, [thoughts])
+    fetchPosts()
+  }, [])
 
   const userName = user?.USER_NAME || 'Thoughtful writer'
   const userInitial = userName.charAt(0).toUpperCase()
 
-  const publishThought = () => {
+  const publishThought = async () => {
     if (!thought.trim()) return
 
-    const tags = tagInput
-      .split(',')
-      .map((tag) => tag.trim())
-      .filter(Boolean)
-      .map((tag) => (tag.startsWith('#') ? tag : `#${tag}`))
+    try {
+      const response = await fetch('http://localhost:8000/thought/post', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ thought: thought.trim() }),
+      })
 
-    const newThought = {
-      id: Date.now(),
-      text: thought.trim(),
-      mood,
-      tags,
-      createdAt: new Date().toLocaleString(),
-      saved: false,
-      likes: 0,
+      if (!response.ok) throw new Error('Unable to publish thought.')
+      setThought('')
+      await fetchPosts()
+    } catch (error) {
+      console.error('Failed to publish thought:', error)
+      setPostError('We could not publish your thought right now.')
     }
-
-    setThoughts((currentThoughts) => [newThought, ...currentThoughts])
-    setThought('')
-    setTagInput('')
-    setMood('💡 Inspired')
   }
 
-  const toggleSaved = (id) => {
-    setThoughts((currentThoughts) =>
-      currentThoughts.map((item) =>
-        item.id === id ? { ...item, saved: !item.saved } : item
-      )
-    )
-  }
-
-  const toggleLike = (id) => {
-    setThoughts((currentThoughts) =>
-      currentThoughts.map((item) =>
-        item.id === id ? { ...item, likes: item.likes + 1 } : item
-      )
-    )
-  }
-
-  const displayedThoughts = thoughts.filter((item) => {
-    const searchableText = `${item.text} ${item.tags.join(' ')} ${item.mood}`
-    return searchableText.toLowerCase().includes(searchTerm.toLowerCase())
-  })
-
-  const savedCount = thoughts.filter((item) => item.saved).length
-  const totalLikes = thoughts.reduce((total, item) => total + item.likes, 0)
+  const displayedPosts = posts.filter((item) =>
+    item.thought.toLowerCase().includes(searchTerm.toLowerCase())
+  )
 
   return (
     <div className="min-h-screen bg-[#f7f8fc] text-slate-800">
@@ -265,27 +252,6 @@ const Dashboard = () => {
             />
 
             <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex flex-wrap items-center gap-2">
-                <select
-                  value={mood}
-                  onChange={(event) => setMood(event.target.value)}
-                  className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600 outline-none focus:border-indigo-400"
-                >
-                  <option>💡 Inspired</option>
-                  <option>😊 Happy</option>
-                  <option>😔 Reflective</option>
-                  <option>😤 Frustrated</option>
-                  <option>😌 Calm</option>
-                </select>
-
-                <input
-                  value={tagInput}
-                  onChange={(event) => setTagInput(event.target.value)}
-                  placeholder="Tags: idea, journal"
-                  className="w-44 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600 outline-none placeholder:text-slate-400 focus:border-indigo-400"
-                />
-              </div>
-
               <div className="flex items-center justify-between gap-4">
                 <span className="text-xs text-slate-400">
                   {thought.length}/500 characters
@@ -324,79 +290,48 @@ const Dashboard = () => {
           </section>
 
           <section className="mt-4 space-y-4">
-            {displayedThoughts.length === 0 ? (
+            {isLoadingPosts ? (
+              <div className="rounded-2xl border border-slate-200 bg-white px-6 py-12 text-center text-sm text-slate-500">Loading your posts...</div>
+            ) : postError ? (
+              <div className="rounded-2xl border border-rose-100 bg-rose-50 px-6 py-12 text-center text-sm text-rose-600">{postError}</div>
+            ) : displayedPosts.length === 0 ? (
               <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center">
                 <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-500">
                   <BookOpen size={25} />
                 </div>
 
                 <h3 className="mt-4 font-semibold text-slate-800">
-                  {thoughts.length === 0
+                  {posts.length === 0
                     ? 'Your story starts here'
                     : 'No thoughts found'}
                 </h3>
 
                 <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-slate-500">
-                  {thoughts.length === 0
+                  {posts.length === 0
                     ? 'Publish your first thought and it will appear here for you to revisit anytime.'
                     : 'Try a different search word or clear your search.'}
                 </p>
               </div>
             ) : (
-              displayedThoughts.map((item) => (
+              displayedPosts.map((item, index) => (
                 <article
-                  key={item.id}
+                  key={item.id || item.post_id || `${item.thought}-${index}`}
                   className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div>
-                      <p className="text-sm font-semibold text-slate-800">{item.mood}</p>
-                      <p className="mt-1 text-xs text-slate-400">{item.createdAt}</p>
+                      <p className="text-sm font-semibold text-slate-800">Thought #{posts.length - index}</p>
+                      <p className="mt-1 text-xs text-slate-400">From your database</p>
                     </div>
-
-                    <button
-                      type="button"
-                      onClick={() => toggleSaved(item.id)}
-                      className={`rounded-lg p-2 transition ${
-                        item.saved
-                          ? 'bg-amber-50 text-amber-500'
-                          : 'text-slate-400 hover:bg-slate-100'
-                      }`}
-                      aria-label="Save thought"
-                    >
-                      <Bookmark
-                        size={18}
-                        fill={item.saved ? 'currentColor' : 'none'}
-                      />
-                    </button>
                   </div>
 
                   <p className="mt-4 whitespace-pre-wrap text-sm leading-7 text-slate-700">
-                    {item.text}
+                    {item.thought}
                   </p>
 
-                  {item.tags.length > 0 && (
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      {item.tags.map((tag) => (
-                        <span
-                          key={`${item.id}-${tag}`}
-                          className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-medium text-indigo-600"
-                        >
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-
                   <div className="mt-5 flex items-center gap-4 border-t border-slate-100 pt-4">
-                    <button
-                      type="button"
-                      onClick={() => toggleLike(item.id)}
-                      className="flex items-center gap-2 text-sm text-slate-500 transition hover:text-rose-500"
-                    >
-                      <Heart size={18} />
-                      {item.likes} {item.likes === 1 ? 'like' : 'likes'}
-                    </button>
+                    <span className="flex items-center gap-2 text-sm text-slate-500"><Heart size={18} />{item.likes_count ?? item.like_count ?? 0} likes</span>
+                    <span className="flex items-center gap-2 text-sm text-slate-500"><MessageCircle size={18} />{item.comments_count ?? item.comment_count ?? 0} replies</span>
                   </div>
                 </article>
               ))
@@ -413,17 +348,17 @@ const Dashboard = () => {
 
             <div className="mt-6 grid grid-cols-3 divide-x divide-slate-100 text-center">
               <div>
-                <p className="text-xl font-bold text-slate-800">{thoughts.length}</p>
+                <p className="text-xl font-bold text-slate-800">{posts.length}</p>
                 <p className="mt-1 text-[11px] text-slate-400">Thoughts</p>
               </div>
 
               <div>
-                <p className="text-xl font-bold text-slate-800">{totalLikes}</p>
+                <p className="text-xl font-bold text-slate-800">{posts.reduce((total, item) => total + (item.likes_count ?? item.like_count ?? 0), 0)}</p>
                 <p className="mt-1 text-[11px] text-slate-400">Likes</p>
               </div>
 
               <div>
-                <p className="text-xl font-bold text-slate-800">{savedCount}</p>
+                <p className="text-xl font-bold text-slate-800">0</p>
                 <p className="mt-1 text-[11px] text-slate-400">Saved</p>
               </div>
             </div>
