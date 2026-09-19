@@ -1,23 +1,23 @@
 
 import FrontPage from "./components/pages/FrontPage"
 import LoginPage from "./components/pages/loginPage"
-import {BrowserRouter, Navigate, Routes, Route} from 'react-router-dom'
+import SignupPage from "./components/pages/SignupPage"
 import Dashboard from "./components/pages/dashboard"
+
+import { BrowserRouter, Navigate, Routes, Route } from "react-router-dom"
 
 function App() {
   return (
     <BrowserRouter>
-    <Routes>
+      <Routes>
 
-      <Route path="/" element={<Navigate to="/login" replace />} />
-      <Route path="/feed" element={<FrontPage/>}/>
-      <Route path="/login" element={<LoginPage/>}/>
-      <Route path="/dashboard" element={<Dashboard/>}/>
-      
-    </Routes>
-    
+  <Route path="/" element={<Navigate to="/login" replace />} />
+        <Route path="/feed" element={<FrontPage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/signup" element={<SignupPage />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+      </Routes>
     </BrowserRouter>
- 
   )
 }
 
