@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from .get_thought import router as get_post_router
 import os
 from dotenv import load_dotenv
-
+from .profile import router as update_dp_router
 load_dotenv()
 
 app = FastAPI()
@@ -34,6 +34,9 @@ app.include_router(router)
 app.include_router(login_router)
 app.include_router(thought_router)
 app.include_router(get_post_router)
+app.include_router(update_dp_router)
+
+
 @app.get("/")
 def home():
     return {
