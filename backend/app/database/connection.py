@@ -6,7 +6,6 @@ load_dotenv()
 
 
 def connect_db():
-
     connection = pymysql.connect(
         host=os.getenv("DB_HOST"),
         user=os.getenv("DB_USER"),
@@ -15,8 +14,12 @@ def connect_db():
         port=int(os.getenv("DB_PORT", 3306)),
         cursorclass=pymysql.cursors.DictCursor,
         ssl={
-            "ca": r"C:\Users\SHUBHAM KUMAR\Mtech\AIML-M.TECH\GENAI\Thought_book_project\ca.pem"
+            "ca": os.path.abspath(
+                os.path.join(
+                    os.path.dirname(__file__),
+                    "../../../ca.pem"
+                )
+            )
         }
     )
-
     return connection

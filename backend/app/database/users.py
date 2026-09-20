@@ -52,7 +52,7 @@ def create_user(
     try:
         cursor.execute(
             '''
-            INSERT INTO USER_LOG_DETAILS(
+            INSERT INTO user_log_details(
                 USER_NAME,
                 USER_PROFILE_PIC,
                 USER_EMAIL_ID

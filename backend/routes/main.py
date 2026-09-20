@@ -1,18 +1,21 @@
-from fastapi import FastAPI
-from .me import router
-from .login import route as login_router
-from .post_thoughts import router as thought_router
-from starlette.middleware.sessions import SessionMiddleware
-from fastapi.middleware.cors import CORSMiddleware
-from .get_thought import router as get_post_router
 import os
+
 from dotenv import load_dotenv
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.sessions import SessionMiddleware
+
+from .admin import router as admin_router
+from .admin_auth import router as admin_auth_router
+from .get_thought import router as get_post_router
+from .login import route as login_router
+from .me import router as me_router
+from .post_thoughts import router as thought_router
 
 load_dotenv()
 
 app = FastAPI()
 
-# CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173"],
@@ -21,21 +24,24 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Session middleware for Google OAuth
 session_secret = os.getenv("SESSION_SECRET_KEY")
 
 app.add_middleware(
     SessionMiddleware,
-    secret_key=session_secret
+    secret_key=session_secret,
 )
 
-# Routes
-app.include_router(router)
+app.include_router(me_router)
 app.include_router(login_router)
 app.include_router(thought_router)
 app.include_router(get_post_router)
+
+app.include_router(admin_auth_router)
+app.include_router(admin_router)
+
+
 @app.get("/")
 def home():
     return {
-        "message": "hello this is home page."
+        "message": "ThoughtBook backend is running.",
     }
