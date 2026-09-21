@@ -8,6 +8,7 @@ from .get_thought import router as get_post_router
 import os
 from dotenv import load_dotenv
 from .profile import router as update_dp_router
+from .edit_profile_route import router as edit_profile_router
 load_dotenv()
 
 app = FastAPI()
@@ -35,7 +36,7 @@ app.include_router(login_router)
 app.include_router(thought_router)
 app.include_router(get_post_router)
 app.include_router(update_dp_router)
-
+app.include_router(edit_profile_router)
 
 @app.get("/")
 def home():
