@@ -28,7 +28,7 @@ oauth.register(
 async def google_login(request: Request):
 
     redirect_uri = request.url_for("google_callback")
-
+    print("REDIRECT URI:", redirect_uri)
     return await oauth.google.authorize_redirect(
         request,
         redirect_uri
@@ -51,9 +51,9 @@ async def google_callback(request: Request):
        
        user_id = user['USER_ID']
        access_token=generate_jwt(user_id)
-    response = RedirectResponse(
-        url='http://localhost:5173/feed'
-    )
+       response = RedirectResponse(
+    url="http://localhost:5173/feed"
+)
     
     response.set_cookie(
         key='access_token',
