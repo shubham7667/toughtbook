@@ -7,6 +7,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from fastapi.middleware.cors import CORSMiddleware
 from .get_thought import router as get_post_router
 from .signup import router as signup_router
+from .interactions import router as interaction_router
 import os
 from dotenv import load_dotenv
 
@@ -39,6 +40,7 @@ app.include_router(login_router)
 app.include_router(thought_router)
 app.include_router(get_post_router)
 app.include_router(signup_router)
+app.include_router(interaction_router)
 @app.get("/")
 def home():
     return {

@@ -107,7 +107,7 @@ async def google_callback(request: Request):
 
     email = userInfo["email"]
 
-    user = get_user_by_id(email)
+    user = get_user_by_email(email)
 
 
     # =====================================================
