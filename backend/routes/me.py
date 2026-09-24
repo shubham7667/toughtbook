@@ -1,8 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends
-
 from app.auth.dependencies import get_current_user
 from app.database.users import get_user_by_user_id
-
+from app.auth.jwt import decode_jwt
 
 router = APIRouter()
 

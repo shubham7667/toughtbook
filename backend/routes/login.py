@@ -1,83 +1,30 @@
 from fastapi import APIRouter, Request, HTTPException
 from authlib.integrations.starlette_client import OAuth
 from starlette.config import Config
-
-from app.database.users import (
-    create_user,
-    get_user_by_id,
-    get_user_by_email
-)
-
-from app.auth.jwt import generate_jwt
-
-from fastapi.responses import (
-    RedirectResponse,
-    JSONResponse
-)
-
 from pathlib import Path
-
 from pydantic import BaseModel, EmailStr
-
+from app.auth.jwt import generate_jwt
 import bcrypt
+from app.database.users import create_user, get_user_by_email
+from fastapi.responses import RedirectResponse, JSONResponse
 
-
-# =========================================================
-# ROUTER
-# =========================================================
 
 route = APIRouter()
-
-
-# =========================================================
-# CONFIG
-# =========================================================
-
-config = Config(
-    str(
-        Path(__file__).resolve().parents[1] / ".env"
-    )
-)
-
-
-# =========================================================
-# GOOGLE OAUTH
-# =========================================================
+config = Config(".env")
 
 oauth = OAuth(config)
 
-
 oauth.register(
     name="google",
-
     client_id=config("GOOGLE_CLIENT_ID"),
-
     client_secret=config("GOOGLE_CLIENT_SECRET"),
-
-    server_metadata_url=
-        "https://accounts.google.com/.well-known/openid-configuration",
-
+    server_metadata_url="https://accounts.google.com/.well-known/openid-configuration",
     client_kwargs={
         "scope": "openid email profile"
     }
 )
 
-
-# =========================================================
-# MANUAL LOGIN REQUEST MODEL
-# =========================================================
-
-class LoginRequest(BaseModel):
-
-    email: EmailStr
-
-    password: str
-
-
-# =========================================================
-# GOOGLE LOGIN
-# =========================================================
-
+# Start of the Google login flow
 @route.get("/thoughtbook/login/google")
 async def google_login(request: Request):
 
@@ -91,29 +38,16 @@ async def google_login(request: Request):
     )
 
 
-# =========================================================
-# GOOGLE CALLBACK
-# =========================================================
-
-@route.get(
-    "/thoughtbook/auth/google/callback",
-    name="google_callback"
-)
+# Google login callback route
+@route.get( "/thoughtbook/auth/google/callback",name="google_callback")
 async def google_callback(request: Request):
 
     token = await oauth.google.authorize_access_token(request)
 
     userInfo = token.get("userinfo")
-
     email = userInfo["email"]
-
     user = get_user_by_email(email)
-
-
-    # =====================================================
-    # NEW GOOGLE USER
-    # =====================================================
-
+    # new user, create an account 
     if not user:
 
         user_id = create_user(
@@ -125,12 +59,7 @@ async def google_callback(request: Request):
         access_token = generate_jwt(
             user_id
         )
-
-
-    # =====================================================
-    # EXISTING GOOGLE USER
-    # =====================================================
-
+    # existing user, generate a JWT
     else:
 
         user_id = user["USER_ID"]
@@ -138,65 +67,37 @@ async def google_callback(request: Request):
         access_token = generate_jwt(
             user_id
         )
-
-
-    # =====================================================
-    # REDIRECT TO FEED
-    # =====================================================
-
+    # Redirect the user to the feed page after successful login
     response = RedirectResponse(
         url="http://localhost:5173/feed"
     )
 
-
-    # =====================================================
-    # JWT COOKIE
-    # =====================================================
-
+    # JWT is stored in an HTTP-only cookie for security
     response.set_cookie(
         key="access_token",
-
         value=access_token,
-
         secure=False,
-
         httponly=True,
-
         samesite="lax",
-
         max_age=30 * 60
     )
 
-
     return response
 
+# Manual login request model
+class LoginRequest(BaseModel):
 
-# =========================================================
-# MANUAL EMAIL + PASSWORD LOGIN
-# =========================================================
+    email: EmailStr
 
+    password: str
+
+# Manual login route for users who prefer to log in with email and password
 @route.post("/thoughtbook/login")
 def manual_login(request: LoginRequest):
 
-    # =====================================================
-    # CLEAN INPUT
-    # =====================================================
-
     email = request.email.lower().strip()
-
     password = request.password
-
-
-    # =====================================================
-    # FIND USER BY EMAIL
-    # =====================================================
-
     user = get_user_by_email(email)
-
-
-    # =====================================================
-    # USER DOES NOT EXIST
-    # =====================================================
 
     if not user:
 
@@ -205,20 +106,11 @@ def manual_login(request: LoginRequest):
             detail="User not found"
         )
 
-
-    # =====================================================
-    # GET STORED PASSWORD
-    # =====================================================
-
     stored_password = user.get(
         "USER_PASSWORD"
     )
 
-
-    # =====================================================
-    # GOOGLE USER
-    # =====================================================
-
+    # google login users will not have a password stored in the database, so we check for that and return an error if they try to log in manually
     if not stored_password:
 
         raise HTTPException(
@@ -229,11 +121,7 @@ def manual_login(request: LoginRequest):
             )
         )
 
-
-    # =====================================================
-    # VERIFY PASSWORD
-    # =====================================================
-
+    # Verify the provided password against the stored hashed password using bcrypt
     try:
 
         password_matches = bcrypt.checkpw(
@@ -245,11 +133,7 @@ def manual_login(request: LoginRequest):
 
         password_matches = False
 
-
-    # =====================================================
-    # INVALID PASSWORD
-    # =====================================================
-
+    # If the password does not match, raise an HTTPException with a 401 status code and an "Invalid password" detail message
     if not password_matches:
 
         raise HTTPException(
@@ -257,20 +141,11 @@ def manual_login(request: LoginRequest):
             detail="Invalid password"
         )
 
-
-    # =====================================================
-    # GENERATE JWT
-    # =====================================================
-
     access_token = generate_jwt(
         str(user["USER_ID"])
     )
 
-
-    # =====================================================
-    # SUCCESS RESPONSE
-    # =====================================================
-
+    # Successful login response with a message and the user ID
     response = JSONResponse(
         content={
             "message": "Login successful",
@@ -278,24 +153,13 @@ def manual_login(request: LoginRequest):
         }
     )
 
-
-    # =====================================================
-    # STORE JWT IN HTTP-ONLY COOKIE
-    # =====================================================
-
     response.set_cookie(
         key="access_token",
-
         value=access_token,
-
         secure=False,
-
         httponly=True,
-
         samesite="lax",
-
         max_age=30 * 60
     )
-
 
     return response

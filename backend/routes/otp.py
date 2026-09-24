@@ -1,46 +1,29 @@
 import os
 import random
-import time
 import requests
 
+from app.database.redis_connection import redis_client
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, EmailStr
 from dotenv import load_dotenv
 
 
 load_dotenv()
-
-
 router = APIRouter(
     prefix="/thoughtbook",
     tags=["OTP"]
 )
 
-
-# =========================================================
-# OTP STORAGE
-# =========================================================
-
-otp_storage = {}
-
-
-# =========================================================
-# REQUEST MODELS
-# =========================================================
-
+# Requesting models for sending and verifying OTPs
 class SendOTPRequest(BaseModel):
     email: EmailStr
-
 
 class VerifyOTPRequest(BaseModel):
     email: EmailStr
     otp: str
 
 
-# =========================================================
-# GENERATE OTP
-# =========================================================
-
+# generating a random 6-digit OTP
 def generate_otp():
 
     return str(
@@ -48,10 +31,7 @@ def generate_otp():
     )
 
 
-# =========================================================
-# SEND EMAIL USING BREVO
-# =========================================================
-
+# Sending OTP email using Brevo API
 def send_email_otp(email: str, otp: str):
 
     api_key = os.getenv("BREVO_API_KEY")
@@ -73,27 +53,21 @@ def send_email_otp(email: str, otp: str):
             detail="BREVO_SENDER_EMAIL is not configured"
         )
 
-
     url = "https://api.brevo.com/v3/smtp/email"
-
 
     headers = {
 
         "accept": "application/json",
-
         "api-key": api_key,
-
         "content-type": "application/json"
 
     }
-
 
     data = {
 
         "sender": {
 
             "name": "ThoughtBook",
-
             "email": sender_email
 
         },
@@ -129,8 +103,7 @@ Regards,
 ThoughtBook Team
 """
 
-    }
-
+}
 
     try:
 
@@ -154,7 +127,6 @@ ThoughtBook Team
                 detail="Failed to send OTP email"
             )
 
-
     except requests.RequestException as e:
 
         print(
@@ -167,129 +139,116 @@ ThoughtBook Team
             detail="Unable to connect to email service"
         )
 
-
-# =========================================================
-# SEND OTP
-# =========================================================
-
+# Send OTP route for sending OTP to the user's email
 @router.post("/send-otp")
 def send_otp(request: SendOTPRequest):
 
     email = request.email.lower()
 
-
-    # Generate OTP
-
+    # Generating a random 6-digit OTP
     otp = generate_otp()
 
+    # Send OTP through Brevo
+    send_email_otp(email, otp)
+    
+    otp_key = f"otp:{email}"
+    attempts_key = f"otp_attempts:{email}"
 
-    # OTP expiry = 5 minutes
-
-    expires_at = time.time() + (5 * 60)
-
-
-    # Store OTP
-
-    otp_storage[email] = {
-
-        "otp": otp,
-
-        "expires_at": expires_at,
-
-        "attempts": 0,
-
-        "verified": False
-
-    }
-
-
-    # Send OTP email
-
-    send_email_otp(
-        email,
+    # Storing OTP
+    redis_client.setex(
+        otp_key,
+        300,  # 5 minutes in seconds
         otp
     )
+  
+
+    # Store/reset attempts count
+    redis_client.setex(
+        attempts_key,
+        300,  # 5 minutes in seconds
+        0
+    )
+
 
     return {
-
-        "message":
-            "OTP sent successfully"
+        "message":"OTP sent successfully"
 
     }
 
-
-# =========================================================
-# VERIFY OTP
-# =========================================================
-
+# Verify OTP route for verifying the OTP entered by the user
 @router.post("/verify-otp")
 def verify_otp(request: VerifyOTPRequest):
 
     email = request.email.lower()
+    otp = request.otp.strip()
 
-    otp = request.otp
+    # Redis keys
+    otp_key = f"otp:{email}"
+    attempts_key = f"otp_attempts:{email}"
 
+    # Get stored OTP from Redis
+    stored_otp = redis_client.get(
+        otp_key
+    )
 
-    # Check OTP exists
-
-    if email not in otp_storage:
-
-        raise HTTPException(
-            status_code=400,
-            detail=
-            "OTP not found. Please request a new OTP."
-        )
-
-
-    stored_data = otp_storage[email]
-
-
-    # Check expiry
-
-    if time.time() > stored_data["expires_at"]:
-
-        del otp_storage[email]
+    # OTP doesn't exist
+    # This also covers expired OTPs
+    if stored_otp is None:
 
         raise HTTPException(
             status_code=400,
-            detail=
-            "OTP has expired. Please request a new OTP."
+            detail="OTP not found or expired. Please request a new OTP."
         )
 
+    # Get number of attempts
+    attempts = redis_client.get(
+        attempts_key
+    )
 
-    # Maximum attempts
+    if attempts is None:
+        attempts = 0
+    else:
+        attempts = int(attempts)
 
-    if stored_data["attempts"] >= 5:
+    # Maximum 5 attempts
+    if attempts >= 5:
 
-        del otp_storage[email]
+        redis_client.delete(
+            otp_key,
+            attempts_key
+        )
 
         raise HTTPException(
             status_code=400,
-            detail=
-            "Too many incorrect attempts. Please request a new OTP."
+            detail="Too many incorrect attempts. Please request a new OTP."
         )
 
+    # Comparing OTP
+    if otp != stored_otp:
 
-    # Verify OTP
-
-    if otp != stored_data["otp"]:
-
-        stored_data["attempts"] += 1
+        redis_client.incr(
+            attempts_key
+        )
 
         raise HTTPException(
             status_code=400,
             detail="Invalid OTP"
         )
 
+    verified_key = f"email_verified:{email}"
 
-    # Mark email as verified
-
-    stored_data["verified"] = True
-
+    redis_client.setex(
+        verified_key,
+        600,
+        "1"       "true"
+    )
+    
+    # OTP is correct
+    redis_client.delete(
+        otp_key,
+        attempts_key
+    )
 
     return {
-
-        "message":
-            "Email verified successfully"
-
+        "message": "Email verified successfully"
     }

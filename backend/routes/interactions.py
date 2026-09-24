@@ -40,11 +40,7 @@ def like_post(
     thought_id: int,
     user_id: str = Depends(get_current_user)
 ):
-
-    # -----------------------------------------------------
-    # CHECK POST
-    # -----------------------------------------------------
-
+    # checking if the thought exists
     if not thought_exists(thought_id):
 
         raise HTTPException(
@@ -52,11 +48,7 @@ def like_post(
             detail="Thought not found"
         )
 
-
-    # -----------------------------------------------------
-    # CHECK ALREADY LIKED
-    # -----------------------------------------------------
-
+    # checking if the user has already liked the thought
     if has_user_liked(
         thought_id,
         int(user_id)
@@ -69,12 +61,7 @@ def like_post(
                 thought_id
             )
         }
-
-
-    # -----------------------------------------------------
-    # ADD LIKE
-    # -----------------------------------------------------
-
+    # adding the like to the thought
     try:
 
         like_thought(
@@ -102,12 +89,7 @@ def like_post(
             thought_id
         )
     }
-
-
-# =========================================================
-# UNLIKE
-# =========================================================
-
+# unlike a thought
 @router.delete("/{thought_id}/like")
 def unlike_post(
     thought_id: int,
@@ -136,11 +118,7 @@ def unlike_post(
         )
     }
 
-
-# =========================================================
-# LIKE STATUS
-# =========================================================
-
+# checking the like status of a thought for a currently logged in user
 @router.get("/{thought_id}/like")
 def get_like_status(
     thought_id: int,
@@ -168,11 +146,7 @@ def get_like_status(
         )
     }
 
-
-# =========================================================
-# ADD COMMENT
-# =========================================================
-
+# adding a comment to a thought
 @router.post("/{thought_id}/comment")
 def create_comment(
     thought_id: int,
@@ -226,11 +200,7 @@ def create_comment(
         "comment": comment
     }
 
-
-# =========================================================
-# GET COMMENTS
-# =========================================================
-
+# fetching comments for a thought
 @router.get("/{thought_id}/comments")
 def fetch_comments(
     thought_id: int
@@ -253,11 +223,7 @@ def fetch_comments(
         "comments": comments
     }
 
-
-# =========================================================
-# DELETE COMMENT
-# =========================================================
-
+# deleting a comment from a thought and a logged in user can only delete their own comment
 @router.delete("/comment/{comment_id}")
 def remove_comment(
     comment_id: int,
