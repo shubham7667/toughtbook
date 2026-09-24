@@ -56,6 +56,34 @@ def get_user_by_email(email: str):
         cursor.close()
         connection.close()
 
+# retrieving a user by their mobile number
+def get_user_by_mobile(mobile: str):
+
+    connection = connect_db()
+    cursor = connection.cursor()
+
+    try:
+        cursor.execute(
+            """
+            SELECT
+                USER_ID,
+                USER_NAME,
+                USER_PROFILE_PIC,
+                USER_EMAIL_ID,
+                USER_MOBILE_NUMBER,
+                USER_PASSWORD
+            FROM manual_login
+            WHERE USER_MOBILE_NUMBER = %s
+            """,
+            (mobile,)
+        )
+
+        return cursor.fetchone()
+
+    finally:
+        cursor.close()
+        connection.close()
+
 # creating a new user in the database
 def create_user(
     user_name: str,
