@@ -210,15 +210,6 @@ def send_otp(request: SendOTPRequest):
         otp
     )
 
-
-    # Development logging
-    # Remove this before production
-
-    print(
-        f"OTP for {email}: {otp}"
-    )
-
-
     return {
 
         "message":

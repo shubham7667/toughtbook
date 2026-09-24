@@ -1,10 +1,6 @@
 from .connection import connect_db
 
-
-# =========================================================
-# CREATE THOUGHT
-# =========================================================
-
+# Creating Thought
 def insert_thoughtPost(user_id: int, thought: str):
 
     connection = connect_db()
@@ -33,11 +29,7 @@ def insert_thoughtPost(user_id: int, thought: str):
         cursor.close()
         connection.close()
 
-
-# =========================================================
-# GET POSTS BY USER
-# =========================================================
-
+# Getting the posts by user_id
 def get_post_by_userId(user_id):
 
     connection = connect_db()
@@ -63,11 +55,7 @@ def get_post_by_userId(user_id):
         cursor.close()
         connection.close()
 
-
-# =========================================================
-# LIKE
-# =========================================================
-
+# Storing the LIKE
 def like_thought(thought_id: int, user_id: int):
 
     connection = connect_db()
@@ -95,11 +83,7 @@ def like_thought(thought_id: int, user_id: int):
         cursor.close()
         connection.close()
 
-
-# =========================================================
-# UNLIKE
-# =========================================================
-
+# Removing the LIKE 
 def unlike_thought(thought_id: int, user_id: int):
 
     connection = connect_db()
@@ -125,11 +109,7 @@ def unlike_thought(thought_id: int, user_id: int):
         cursor.close()
         connection.close()
 
-
-# =========================================================
-# CHECK LIKE
-# =========================================================
-
+# checking if the user has liked the thought or not
 def has_user_liked(
     thought_id: int,
     user_id: int
@@ -161,10 +141,7 @@ def has_user_liked(
         connection.close()
 
 
-# =========================================================
-# LIKE COUNT
-# =========================================================
-
+# LIKE count for a specific thought
 def get_like_count(thought_id: int):
 
     connection = connect_db()
@@ -189,11 +166,7 @@ def get_like_count(thought_id: int):
         cursor.close()
         connection.close()
 
-
-# =========================================================
-# ADD COMMENT
-# =========================================================
-
+# Adding a comment to a thought
 def add_comment(
     thought_id: int,
     user_id: int,
@@ -229,11 +202,7 @@ def add_comment(
         cursor.close()
         connection.close()
 
-
-# =========================================================
-# GET COMMENTS
-# =========================================================
-
+# Retrieving comments for a specific thought
 def get_comments(thought_id: int):
 
     connection = connect_db()
@@ -266,11 +235,7 @@ def get_comments(thought_id: int):
         cursor.close()
         connection.close()
 
-
-# =========================================================
-# DELETE COMMENT
-# =========================================================
-
+# removing a comment from a thought
 def delete_comment(
     comment_id: int,
     user_id: int
@@ -301,10 +266,7 @@ def delete_comment(
         cursor.close()
         connection.close()
 
-# =========================================================
-# CHECK THOUGHT EXISTS
-# =========================================================
-
+# Checking if a thought exists
 def thought_exists(thought_id: int):
 
     connection = connect_db()

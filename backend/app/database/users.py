@@ -1,42 +1,6 @@
 from app.database.connection import connect_db
 
-
-# =========================================================
-# GET USER BY EMAIL
-# =========================================================
-
-def get_user_by_id(user_id: str):
-
-    connection = connect_db()
-    cursor = connection.cursor()
-
-    try:
-        cursor.execute(
-            """
-            SELECT
-                USER_ID,
-                USER_NAME,
-                USER_PROFILE_PIC,
-                USER_EMAIL_ID,
-                USER_MOBILE_NUMBER,
-                USER_PASSWORD
-            FROM manual_login
-            WHERE USER_EMAIL_ID = %s
-            """,
-            (user_id,)
-        )
-
-        return cursor.fetchone()
-
-    finally:
-        cursor.close()
-        connection.close()
-
-
-# =========================================================
-# GET USER BY USER ID
-# =========================================================
-
+# retrieving a user by their user_id
 def get_user_by_user_id(user_id: str):
 
     connection = connect_db()
@@ -64,11 +28,7 @@ def get_user_by_user_id(user_id: str):
         cursor.close()
         connection.close()
 
-
-# =========================================================
-# CHECK EMAIL
-# =========================================================
-
+# retrieving a user by their email
 def get_user_by_email(email: str):
 
     connection = connect_db()
@@ -96,42 +56,7 @@ def get_user_by_email(email: str):
         cursor.close()
         connection.close()
 
-
-# =========================================================
-# CHECK MOBILE
-# =========================================================
-
-def get_user_by_mobile(mobile: str):
-
-    connection = connect_db()
-    cursor = connection.cursor()
-
-    try:
-        cursor.execute(
-            """
-            SELECT
-                USER_ID,
-                USER_NAME,
-                USER_PROFILE_PIC,
-                USER_EMAIL_ID,
-                USER_MOBILE_NUMBER
-            FROM manual_login
-            WHERE USER_MOBILE_NUMBER = %s
-            """,
-            (mobile,)
-        )
-
-        return cursor.fetchone()
-
-    finally:
-        cursor.close()
-        connection.close()
-
-
-# =========================================================
-# CREATE USER
-# =========================================================
-
+# creating a new user in the database
 def create_user(
     user_name: str,
     user_profile: str,

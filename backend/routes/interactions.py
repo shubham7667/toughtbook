@@ -25,11 +25,7 @@ router = APIRouter(
     tags=["Thought Interactions"]
 )
 
-
-# =========================================================
-# COMMENT REQUEST
-# =========================================================
-
+# A Pydantic model for comment request validation
 class CommentRequest(BaseModel):
 
     comment: str = Field(
@@ -38,11 +34,7 @@ class CommentRequest(BaseModel):
         max_length=1000
     )
 
-
-# =========================================================
-# LIKE
-# =========================================================
-
+# 
 @router.post("/{thought_id}/like")
 def like_post(
     thought_id: int,

@@ -1,11 +1,10 @@
 from fastapi import Request, HTTPException
-
 from app.auth.jwt import decode_jwt
 
 
 def get_current_user(request: Request):
 
-    # Get JWT from HTTP-only cookie
+    # Getting JWT from HTTP-only cookie
     access_token = request.cookies.get("access_token")
 
     if not access_token:
@@ -14,7 +13,7 @@ def get_current_user(request: Request):
             detail="Not authenticated"
         )
 
-    # Decode and verify JWT
+    # Decoding and verifying JWT
     payload = decode_jwt(access_token)
 
     if not payload:
@@ -23,7 +22,7 @@ def get_current_user(request: Request):
             detail="Invalid or expired token"
         )
 
-    # Get user ID from JWT
+    # Getting user ID from JWT
     user_id = payload.get("sub")
 
     if not user_id:
