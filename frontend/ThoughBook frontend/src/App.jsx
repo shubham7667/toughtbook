@@ -1,8 +1,8 @@
 
-import FrontPage from "./components/pages/FrontPage"
+import FrontPage from "./components/pages/user_profile"
 import LoginPage from "./components/pages/loginPage"
 import { BrowserRouter, Navigate, Routes, Route } from 'react-router-dom'
-import Dashboard from "./components/pages/dashboard"
+import Dashboard from "./components/pages/user_feed"
 import EditProfile from "./components/pages/editProfile"
 import ThoughtbookSays from "./components/admin/toughtbook_says"
 import AdminUnauthorized from "./components/pages/not_authorize"
@@ -13,9 +13,9 @@ function App() {
       <Routes>
 
         <Route path="/" element={<Navigate to="/login" replace />} />
-        <Route path="/feed" element={<FrontPage />} />
+        <Route path="/profile" element={<FrontPage />} />
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/userfeed" element={<Dashboard />} />
         <Route path="/edit_profile" element={<EditProfile />} />
         <Route element={<AdminProtectedRoute />}>
           <Route
