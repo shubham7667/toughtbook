@@ -159,7 +159,7 @@ async def google_callback(request: Request):
     )
 
     response = RedirectResponse(
-        url="http://localhost:5173/feed"
+        url="http://localhost:5173/profile"
     )
 
     response.set_cookie(

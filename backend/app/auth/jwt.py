@@ -2,7 +2,6 @@ import jwt
 from dotenv import load_dotenv
 import os
 from datetime import datetime,timedelta,timezone
-from fastapi import HTTPException
 
 load_dotenv()
 jwt_secretkey = os.getenv('JWT_SECRET_KEY')
