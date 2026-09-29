@@ -237,6 +237,37 @@ def get_followers(user_id):
         connection.close()
 
 
+def get_following(user_id):
+    connection = connect_db()
+    cursor = connection.cursor()
+
+    try:
+        cursor.execute(
+            '''
+            SELECT following_id
+            FROM follows
+            WHERE follower_id = %s
+            AND (
+                status = 'accepted'
+                OR status = 'pending'
+            )
+            ''',
+            (user_id,)
+        )
+
+        return cursor.fetchall()
+
+    except pymysql.MySQLError:
+        raise HTTPException(
+            status_code=500,
+            detail='Database error while fetching following users.'
+        )
+
+    finally:
+        cursor.close()
+        connection.close()
+
+
 def follower_count(user_id):
     connection = connect_db()
     cursor = connection.cursor()
@@ -457,6 +488,3 @@ def reject_follow_request(follow_id, current_user_id):
     finally:
         cursor.close()
         connection.close()
-        
-
-
