@@ -8,30 +8,44 @@ def insert_thoughtPost(user_id: int, thought: str):
 
     try:
         cursor.execute(
-            """
-            INSERT INTO thought(
-                user_id,
-                thought
-            )
-            VALUES (%s, %s)
-            """,
-            (
-                user_id,
-                thought
-            )
+            '''
+            INSERT INTO thought(user_id, thought)
+            VALUES(%s, %s)
+            ''',
+            (user_id, thought)
         )
 
         connection.commit()
-
         return cursor.lastrowid
 
     finally:
         cursor.close()
         connection.close()
 
-# Getting the posts by user_id
-def get_post_by_userId(user_id):
 
+def get_post_by_userId(user_id: int):
+    connection = connect_db()
+    cursor = connection.cursor()
+
+    try:
+        cursor.execute(
+            '''
+            SELECT post_id, user_id, thought
+            FROM thought
+            WHERE user_id = %s
+            ORDER BY post_id DESC
+            ''',
+            (user_id,)
+        )
+
+        return cursor.fetchall()
+
+    finally:
+        cursor.close()
+        connection.close()
+
+
+def delete_post_by_post_id(post_id: int, user_id: int):
     connection = connect_db()
     cursor = connection.cursor()
 
@@ -82,6 +96,7 @@ def like_thought(thought_id: int, user_id: int):
     finally:
         cursor.close()
         connection.close()
+
 
 # Removing the LIKE 
 def unlike_thought(thought_id: int, user_id: int):

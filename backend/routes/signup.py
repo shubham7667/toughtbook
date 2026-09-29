@@ -3,14 +3,12 @@ from pydantic import BaseModel, EmailStr
 from pymysql.err import IntegrityError
 import bcrypt
 
-
 from app.database.redis_connection import redis_client
 from app.database.users import (
-    get_user_by_email,
-    get_user_by_mobile,
-    create_user
+    get_manual_user_by_email,
+    get_manual_user_by_mobile,
+    create_manual_user
 )
-
 
 
 router = APIRouter(
@@ -18,7 +16,7 @@ router = APIRouter(
     tags=["Signup"]
 )
 
-# Requesting a model for signup
+
 class SignupRequest(BaseModel):
 
     name: str
@@ -26,7 +24,7 @@ class SignupRequest(BaseModel):
     email: EmailStr
     password: str
 
-# Signup route
+
 @router.post("/signup")
 def signup(request: SignupRequest):
 
@@ -35,7 +33,10 @@ def signup(request: SignupRequest):
     email = request.email.lower().strip()
     password = request.password
 
-    # basic validation for name, mobile, and password
+    # -------------------------------------------------
+    # BASIC VALIDATION
+    # -------------------------------------------------
+
     if len(name) < 3:
 
         raise HTTPException(
@@ -56,8 +57,11 @@ def signup(request: SignupRequest):
             status_code=400,
             detail="Password must contain at least 8 characters."
         )
-    
-    # checking if the email is verified in Redis
+
+    # -------------------------------------------------
+    # CHECK EMAIL VERIFICATION
+    # -------------------------------------------------
+
     verified_key = f"email_verified:{email}"
 
     is_verified = redis_client.get(
@@ -71,8 +75,11 @@ def signup(request: SignupRequest):
             detail="Please verify your email first."
         )
 
-    # checking if the user already exists in the database
-    existing_email = get_user_by_email(
+    # -------------------------------------------------
+    # CHECK EXISTING MANUAL ACCOUNT
+    # -------------------------------------------------
+
+    existing_email = get_manual_user_by_email(
         email
     )
 
@@ -83,8 +90,11 @@ def signup(request: SignupRequest):
             detail="User already exists. Please login with your credentials."
         )
 
-    # checking if the mobile number is already registered in the database
-    existing_mobile = get_user_by_mobile(
+    # -------------------------------------------------
+    # CHECK EXISTING MOBILE
+    # -------------------------------------------------
+
+    existing_mobile = get_manual_user_by_mobile(
         mobile
     )
 
@@ -95,26 +105,30 @@ def signup(request: SignupRequest):
             detail="User already exists. Please login with your credentials."
         )
 
-    # hashing the password using bcrypt
+    # -------------------------------------------------
+    # HASH PASSWORD
+    # -------------------------------------------------
+
     hashed_password = bcrypt.hashpw(
         password.encode("utf-8"),
         bcrypt.gensalt()
     ).decode("utf-8")
 
-    # creating the user in the database
+    # -------------------------------------------------
+    # CREATE GLOBAL USER + MANUAL LOGIN USER
+    # -------------------------------------------------
+
     try:
 
-        user_id = create_user(
-            name,
-            None,
-            email,
-            mobile,
-            hashed_password
+        user_id = create_manual_user(
+            user_name=name,
+            user_email=email,
+            user_mobile=mobile,
+            user_password=hashed_password
         )
 
     except IntegrityError as e:
 
-        # MySQL duplicate-key protection
         if e.args[0] == 1062:
 
             raise HTTPException(
@@ -127,13 +141,18 @@ def signup(request: SignupRequest):
             detail="Unable to create account."
         )
 
+    # -------------------------------------------------
+    # REMOVE EMAIL VERIFICATION KEY
+    # -------------------------------------------------
 
-    # removing the email verification key from Redis after successful signup
     redis_client.delete(
         verified_key
     )
 
-    # returning a success message along with the user ID
+    # -------------------------------------------------
+    # RESPONSE
+    # -------------------------------------------------
+
     return {
 
         "message":
