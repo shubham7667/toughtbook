@@ -1,4 +1,4 @@
-from database.connection import connect_db
+from app.database.connection import connect_db
 from fastapi import HTTPException
 import pymysql
 
