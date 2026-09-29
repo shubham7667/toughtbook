@@ -100,7 +100,7 @@ async def google_callback(request: Request):
         access_token = generate_jwt(user_id)
 
     response = RedirectResponse(
-        url="http://localhost:5173/feed"
+        url="http://localhost:5173/profile"
     )
 
     response.set_cookie(
