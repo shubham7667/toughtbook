@@ -3,95 +3,90 @@ import json
 from app.database.connection import connect_db
 
 
+# =========================================================
+# GET USER PROFILE BY USER ID
+# =========================================================
+
 def get_user_profile_by_user_id(user_id):
+
     user_id = int(user_id)
 
     connection = connect_db()
     cursor = connection.cursor()
 
     try:
-        for table_name in (
-            "user_profile",
-            "user_profile_details",
-            "user_details",
-            "user_detail",
-        ):
-            try:
-                cursor.execute(
-                    f"""
-                    SELECT
-                        BIO,
-                        QUOTE,
-                        LOCATION,
-                        WEBSITE,
-                        TWITTER,
-                        INSTAGRAM,
-                        LANGUAGES,
-                        INTERESTS,
-                        PRIVATE_PROFILE,
-                        SHOW_ACTIVITY,
-                        NOTIFY_FOLLOWERS
-                    FROM {table_name}
-                    WHERE USER_ID = %s
-                    """,
-                    (user_id,),
-                )
+        cursor.execute(
+            """
+            SELECT
+                BIO,
+                QUOTE,
+                LOCATION,
+                WEBSITE,
+                TWITTER,
+                INSTAGRAM,
+                LANGUAGES,
+                INTERESTS,
+                PRIVATE_PROFILE,
+                SHOW_ACTIVITY,
+                NOTIFY_FOLLOWERS
+            FROM user_profile
+            WHERE USER_ID = %s
+            """,
+            (user_id,)
+        )
 
-                row = cursor.fetchone()
+        row = cursor.fetchone()
 
-                if row:
-                    languages_value = (
-                        row.get("LANGUAGES")
-                        or row.get("languages")
-                        or "[]"
-                    )
+        if not row:
+            return None
 
-                    interests_value = (
-                        row.get("INTERESTS")
-                        or row.get("interests")
-                        or "[]"
-                    )
+        languages = row.get("LANGUAGES")
+        interests = row.get("INTERESTS")
 
-                    return {
-                        "bio": row.get("BIO") or row.get("bio") or "",
-                        "quote": row.get("QUOTE") or row.get("quote") or "",
-                        "location": row.get("LOCATION") or row.get("location") or "",
-                        "website": row.get("WEBSITE") or row.get("website") or "",
-                        "twitter": row.get("TWITTER") or row.get("twitter") or "",
-                        "instagram": row.get("INSTAGRAM") or row.get("instagram") or "",
-                        "languages": (
-                            json.loads(languages_value)
-                            if isinstance(languages_value, str)
-                            else (languages_value or [])
-                        ),
-                        "interests": (
-                            json.loads(interests_value)
-                            if isinstance(interests_value, str)
-                            else (interests_value or [])
-                        ),
-                        "private_profile": bool(
-                            row.get("PRIVATE_PROFILE")
-                            or row.get("private_profile")
-                        ),
-                        "show_activity": bool(
-                            row.get("SHOW_ACTIVITY")
-                            or row.get("show_activity")
-                        ),
-                        "notify_followers": bool(
-                            row.get("NOTIFY_FOLLOWERS")
-                            or row.get("notify_followers")
-                        ),
-                    }
+        if isinstance(languages, str):
+            languages = json.loads(languages)
 
-            except Exception:
-                continue
+        if isinstance(interests, str):
+            interests = json.loads(interests)
 
-        return None
+        return {
+            "bio": row.get("BIO") or "",
+            "quote": row.get("QUOTE") or "",
+            "location": row.get("LOCATION") or "",
+            "website": row.get("WEBSITE") or "",
+            "twitter": row.get("TWITTER") or "",
+            "instagram": row.get("INSTAGRAM") or "",
+
+            "languages": languages if languages is not None else [],
+            "interests": interests if interests is not None else [],
+
+            "private_profile": (
+                bool(row["PRIVATE_PROFILE"])
+                if row.get("PRIVATE_PROFILE") is not None
+                else False
+            ),
+
+            "show_activity": (
+                bool(row["SHOW_ACTIVITY"])
+                if row.get("SHOW_ACTIVITY") is not None
+                else True
+            ),
+
+            "notify_followers": (
+                bool(row["NOTIFY_FOLLOWERS"])
+                if row.get("NOTIFY_FOLLOWERS") is not None
+                else True
+            ),
+        }
 
     finally:
         cursor.close()
         connection.close()
 
+
+# =========================================================
+# SAVE USER PROFILE
+# =========================================================
 
 def save_user_profile(
     user_id,
@@ -107,24 +102,27 @@ def save_user_profile(
     show_activity,
     notify_followers,
 ):
+
     user_id = int(user_id)
 
     connection = connect_db()
     cursor = connection.cursor()
 
     try:
+
         cursor.execute(
             """
             SELECT PROFILE_ID
             FROM user_profile
             WHERE USER_ID = %s
             """,
-            (user_id,),
+            (user_id,)
         )
 
         existing_profile = cursor.fetchone()
 
         if existing_profile:
+
             cursor.execute(
                 """
                 UPDATE user_profile
@@ -155,10 +153,11 @@ def save_user_profile(
                     show_activity,
                     notify_followers,
                     user_id,
-                ),
+                )
             )
 
         else:
+
             cursor.execute(
                 """
                 INSERT INTO user_profile (
@@ -175,7 +174,10 @@ def save_user_profile(
                     SHOW_ACTIVITY,
                     NOTIFY_FOLLOWERS
                 )
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                VALUES (
+                    %s, %s, %s, %s, %s, %s,
+                    %s, %s, %s, %s, %s, %s
+                )
                 """,
                 (
                     user_id,
@@ -190,56 +192,55 @@ def save_user_profile(
                     private_profile,
                     show_activity,
                     notify_followers,
-                ),
+                )
             )
 
         connection.commit()
+
+    except Exception:
+        connection.rollback()
+        raise
 
     finally:
         cursor.close()
         connection.close()
 
 
+# =========================================================
+# GET COMPLETE USER PROFILE
+# =========================================================
+
 def get_user_profile(user_id):
+
     user_id = int(user_id)
 
     connection = connect_db()
     cursor = connection.cursor()
 
     try:
-        for table_name in ("user_profile", "user_profile_details"):
-            try:
-                cursor.execute(
-                    f"""
-                    SELECT
-                        PROFILE_ID,
-                        USER_ID,
-                        BIO,
-                        QUOTE,
-                        LOCATION,
-                        WEBSITE,
-                        TWITTER,
-                        INSTAGRAM,
-                        LANGUAGES,
-                        INTERESTS,
-                        PRIVATE_PROFILE,
-                        SHOW_ACTIVITY,
-                        NOTIFY_FOLLOWERS
-                    FROM {table_name}
-                    WHERE USER_ID = %s
-                    """,
-                    (user_id,),
-                )
+        cursor.execute(
+            """
+            SELECT
+                PROFILE_ID,
+                USER_ID,
+                BIO,
+                QUOTE,
+                LOCATION,
+                WEBSITE,
+                TWITTER,
+                INSTAGRAM,
+                LANGUAGES,
+                INTERESTS,
+                PRIVATE_PROFILE,
+                SHOW_ACTIVITY,
+                NOTIFY_FOLLOWERS
+            FROM user_profile
+            WHERE USER_ID = %s
+            """,
+            (user_id,)
+        )
 
-                row = cursor.fetchone()
-
-                if row:
-                    return row
-
-            except Exception:
-                continue
-
-        return None
+        return cursor.fetchone()
 
     finally:
         cursor.close()

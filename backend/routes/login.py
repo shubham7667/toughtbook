@@ -7,9 +7,8 @@ from dotenv import load_dotenv
 
 from app.auth.jwt import generate_jwt
 from app.database.users import (
-    get_google_user_by_email,
-    create_google_user,
-    get_manual_user_by_email
+    get_user_by_email,
+    create_user
 )
 
 import bcrypt
@@ -19,7 +18,6 @@ import os
 load_dotenv()
 
 admin_email = os.getenv("ADMIN_EMAIL")
-
 
 route = APIRouter()
 
@@ -46,19 +44,10 @@ oauth.register(
 # GOOGLE LOGIN
 # =========================================================
 
-@route.get(
-    "/thoughtbook/login/google"
-)
+@route.get("/thoughtbook/login/google")
 async def google_login(request: Request):
 
-    redirect_uri = request.url_for(
-        "google_callback"
-    )
-
-    print(
-        "REDIRECT URI:",
-        redirect_uri
-    )
+    redirect_uri = request.url_for("google_callback")
 
     return await oauth.google.authorize_redirect(
         request,
@@ -76,18 +65,11 @@ async def google_login(request: Request):
 )
 async def google_callback(request: Request):
 
-    # -----------------------------------------------------
-    # Get Google access token
-    # -----------------------------------------------------
-
-    token = await oauth.google.authorize_access_token(
-        request
-    )
+    token = await oauth.google.authorize_access_token(request)
 
     user_info = token.get("userinfo")
 
     if not user_info:
-
         raise HTTPException(
             status_code=401,
             detail="Unable to retrieve Google user information."
@@ -95,9 +77,9 @@ async def google_callback(request: Request):
 
     email = user_info["email"].lower().strip()
 
-    # =====================================================
+    # -----------------------------------------------------
     # ADMIN LOGIN
-    # =====================================================
+    # -----------------------------------------------------
 
     if email == admin_email:
 
@@ -121,42 +103,44 @@ async def google_callback(request: Request):
 
         return response
 
-    # =====================================================
-    # NORMAL GOOGLE USER
-    # =====================================================
-
-    # Check if Google user already exists
-    user = get_google_user_by_email(
-        email
-    )
-
     # -----------------------------------------------------
-    # Existing Google user
+    # Find existing user
     # -----------------------------------------------------
+
+    user = get_user_by_email(email)
 
     if user:
 
-        global_user_id = user["USER_ID"]
+        if user["auth_provider"] != "google":
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    "This email is already registered "
+                    "with email and password. "
+                    "Please use email login."
+                )
+            )
+
+        user_id = user["user_id"]
 
     # -----------------------------------------------------
-    # New Google user
+    # Create new Google user
     # -----------------------------------------------------
 
     else:
 
-        global_user_id = create_google_user(
+        user_id = create_user(
             user_name=user_info.get("name"),
-            user_profile=user_info.get("picture"),
-            user_email=email
+            user_email=email,
+            user_profile_pic=user_info.get("picture"),
+            auth_provider="google"
         )
 
     # -----------------------------------------------------
-    # Generate JWT using GLOBAL USER ID
+    # Create access token
     # -----------------------------------------------------
 
-    access_token = generate_jwt(
-        str(global_user_id)
-    )
+    access_token = generate_jwt(str(user_id))
 
     response = RedirectResponse(
         url="http://localhost:5173/profile"
@@ -175,7 +159,7 @@ async def google_callback(request: Request):
 
 
 # =========================================================
-# MANUAL LOGIN
+# EMAIL / PASSWORD LOGIN
 # =========================================================
 
 class LoginRequest(BaseModel):
@@ -184,40 +168,24 @@ class LoginRequest(BaseModel):
     password: str
 
 
-@route.post(
-    "/thoughtbook/login"
-)
-def manual_login(request: LoginRequest):
+@route.post("/thoughtbook/login")
+def login(request: LoginRequest):
 
     email = request.email.lower().strip()
-    password = request.password
 
-    # -----------------------------------------------------
-    # Find manual account
-    # -----------------------------------------------------
-
-    user = get_manual_user_by_email(
-        email
-    )
+    user = get_user_by_email(email)
 
     if not user:
-
         raise HTTPException(
             status_code=404,
             detail="User not found"
         )
 
     # -----------------------------------------------------
-    # Get stored password
+    # Authentication provider
     # -----------------------------------------------------
 
-    stored_password = user.get(
-        "USER_PASSWORD"
-    )
-
-    # Google-only account
-    if not stored_password:
-
+    if user["auth_provider"] != "email":
         raise HTTPException(
             status_code=400,
             detail=(
@@ -226,53 +194,45 @@ def manual_login(request: LoginRequest):
             )
         )
 
+    stored_password = user["user_password"]
+
+    if not stored_password:
+        raise HTTPException(
+            status_code=400,
+            detail="This account does not have a password."
+        )
+
     # -----------------------------------------------------
     # Verify password
     # -----------------------------------------------------
 
     try:
-
         password_matches = bcrypt.checkpw(
-            password.encode("utf-8"),
+            request.password.encode("utf-8"),
             stored_password.encode("utf-8")
         )
 
-    except Exception:
-
+    except (ValueError, TypeError):
         password_matches = False
 
     if not password_matches:
-
         raise HTTPException(
             status_code=401,
             detail="Invalid password"
         )
 
     # -----------------------------------------------------
-    # IMPORTANT:
-    #
-    # manual_login.USER_ID is now the SAME
-    # as user_log_details.USER_ID
+    # Create access token
     # -----------------------------------------------------
 
-    global_user_id = user["USER_ID"]
+    user_id = user["user_id"]
 
-    # -----------------------------------------------------
-    # Generate JWT using GLOBAL USER ID
-    # -----------------------------------------------------
-
-    access_token = generate_jwt(
-        str(global_user_id)
-    )
-
-    # -----------------------------------------------------
-    # Response
-    # -----------------------------------------------------
+    access_token = generate_jwt(str(user_id))
 
     response = JSONResponse(
         content={
             "message": "Login successful",
-            "user_id": global_user_id
+            "user_id": user_id
         }
     )
 

@@ -58,6 +58,10 @@ const LeftSidebar = ({ userName, userHandle, profilePicture, heightClass = "h-sc
     if (label === "Search") {
       navigate("/search");
     }
+
+    if (label=="Notifications"){
+      navigate("/notifications");
+    }
   }}
   className={`flex w-full items-center gap-3 rounded-2xl px-3 py-2 text-left text-[15px] tracking-[-0.01em] transition ${
     label === "Profile"

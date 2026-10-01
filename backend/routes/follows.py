@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 
 from app.auth.dependencies import get_current_user
-from app.database.follows import (
+from app.database.follow.follows import (
     create_follow,
     create_unfollow,
     get_follow_status,

@@ -5,9 +5,9 @@ import bcrypt
 
 from app.database.redis_connection import redis_client
 from app.database.users import (
-    get_manual_user_by_email,
-    get_manual_user_by_mobile,
-    create_manual_user
+    get_user_by_email,
+    get_user_by_mobile,
+    create_user
 )
 
 
@@ -18,7 +18,6 @@ router = APIRouter(
 
 
 class SignupRequest(BaseModel):
-
     name: str
     mobile: str
     email: EmailStr
@@ -38,21 +37,18 @@ def signup(request: SignupRequest):
     # -------------------------------------------------
 
     if len(name) < 3:
-
         raise HTTPException(
             status_code=400,
             detail="Name must contain at least 3 characters."
         )
 
     if not mobile.isdigit() or len(mobile) != 10:
-
         raise HTTPException(
             status_code=400,
             detail="Enter a valid 10-digit mobile number."
         )
 
     if len(password) < 8:
-
         raise HTTPException(
             status_code=400,
             detail="Password must contain at least 8 characters."
@@ -64,27 +60,17 @@ def signup(request: SignupRequest):
 
     verified_key = f"email_verified:{email}"
 
-    is_verified = redis_client.get(
-        verified_key
-    )
-
-    if is_verified != "1":
-
+    if redis_client.get(verified_key) != "1":
         raise HTTPException(
             status_code=400,
             detail="Please verify your email first."
         )
 
     # -------------------------------------------------
-    # CHECK EXISTING MANUAL ACCOUNT
+    # CHECK EXISTING EMAIL
     # -------------------------------------------------
 
-    existing_email = get_manual_user_by_email(
-        email
-    )
-
-    if existing_email:
-
+    if get_user_by_email(email):
         raise HTTPException(
             status_code=409,
             detail="User already exists. Please login with your credentials."
@@ -94,12 +80,7 @@ def signup(request: SignupRequest):
     # CHECK EXISTING MOBILE
     # -------------------------------------------------
 
-    existing_mobile = get_manual_user_by_mobile(
-        mobile
-    )
-
-    if existing_mobile:
-
+    if get_user_by_mobile(mobile):
         raise HTTPException(
             status_code=409,
             detail="User already exists. Please login with your credentials."
@@ -115,22 +96,22 @@ def signup(request: SignupRequest):
     ).decode("utf-8")
 
     # -------------------------------------------------
-    # CREATE GLOBAL USER + MANUAL LOGIN USER
+    # CREATE USER
     # -------------------------------------------------
 
     try:
 
-        user_id = create_manual_user(
+        user_id = create_user(
             user_name=name,
             user_email=email,
+            user_password=hashed_password,
             user_mobile=mobile,
-            user_password=hashed_password
+            auth_provider="email"
         )
 
     except IntegrityError as e:
 
         if e.args[0] == 1062:
-
             raise HTTPException(
                 status_code=409,
                 detail="User already exists. Please login with your credentials."
@@ -145,20 +126,13 @@ def signup(request: SignupRequest):
     # REMOVE EMAIL VERIFICATION KEY
     # -------------------------------------------------
 
-    redis_client.delete(
-        verified_key
-    )
+    redis_client.delete(verified_key)
 
     # -------------------------------------------------
     # RESPONSE
     # -------------------------------------------------
 
     return {
-
-        "message":
-            "Account created successfully. Please login.",
-
-        "user_id":
-            user_id
-
+        "message": "Account created successfully. Please login.",
+        "user_id": user_id
     }

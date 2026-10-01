@@ -4,7 +4,7 @@ import json
 from app.auth.jwt import decode_jwt
 from app.database.edit_profile import save_user_profile
 from app.database.edit_profile import get_user_profile
-from app.database.users import get_global_user_by_id
+from app.database.users import get_user_by_id
 # from app.database.update import get_user_profile
 class UserProfile(BaseModel):
     bio: str | None = None
@@ -81,7 +81,7 @@ async def get_profile(request: Request):
 
     user_id = user["sub"]
 
-    user_details = get_global_user_by_id(user_id)
+    user_details = get_user_by_id(user_id)
     profile = get_user_profile(user_id)
 
     if not user_details:

@@ -18,7 +18,7 @@ def get_user_feed(current_user_id: int):
                 u.USER_PROFILE_PIC
             FROM thought t
 
-            JOIN user_log_details u
+            JOIN users u
                 ON u.USER_ID = t.user_id
 
             WHERE
