@@ -2,14 +2,12 @@ import jwt
 from dotenv import load_dotenv
 import os
 from datetime import datetime,timedelta,timezone
-from fastapi import HTTPException
 
 load_dotenv()
 jwt_secretkey = os.getenv('JWT_SECRET_KEY')
 ALGORITHM='HS256'
 ACESS_TOKEN_EXPIRE_TIME=30
 admin_email= os.getenv('ADMIN_EMAIL')
-
 
 
 
@@ -23,10 +21,7 @@ def generate_jwt(
         minutes=ACESS_TOKEN_EXPIRE_TIME
     )
 
-    # ==================================================
     # ADMIN JWT
-    # ==================================================
-
     if user_id == admin_email:
 
         payload = {
@@ -39,10 +34,7 @@ def generate_jwt(
             "type": "access"
         }
 
-    # ==================================================
     # NORMAL USER JWT
-    # ==================================================
-
     else:
 
         payload = {

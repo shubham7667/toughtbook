@@ -12,6 +12,7 @@ import {
   Settings,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 const navItems = [
   { label: "Home", icon: Home },
@@ -27,6 +28,7 @@ const navItems = [
 
 const LeftSidebar = ({ userName, userHandle, profilePicture, heightClass = "h-screen" }) => {
   const auth = useAuth();
+  const navigate = useNavigate();
   const authUser = auth?.user?.user ?? auth?.user;
   const displayName = userName ?? authUser?.USER_NAME ?? "Thoughtful writer";
   const displayHandle = userHandle ?? (authUser?.USER_EMAIL_ID ? `@${authUser.USER_EMAIL_ID.split("@")[0]}` : "@yourhandle");
@@ -50,13 +52,23 @@ const LeftSidebar = ({ userName, userHandle, profilePicture, heightClass = "h-sc
                 ({ label, icon: Icon }) => (
 
                   <button
-                    key={label}
-                    type="button"
-                    className={`flex w-full items-center gap-3 rounded-2xl px-3 py-2 text-left text-[15px] tracking-[-0.01em] transition ${label === "Profile"
-                      ? "bg-indigo-50 font-semibold text-indigo-600"
-                      : "font-normal text-slate-700 hover:bg-slate-50 hover:text-indigo-600"
-                      }`}
-                  >
+  key={label}
+  type="button"
+  onClick={() => {
+    if (label === "Search") {
+      navigate("/search");
+    }
+
+    if (label=="Notifications"){
+      navigate("/notifications");
+    }
+  }}
+  className={`flex w-full items-center gap-3 rounded-2xl px-3 py-2 text-left text-[15px] tracking-[-0.01em] transition ${
+    label === "Profile"
+      ? "bg-indigo-50 font-semibold text-indigo-600"
+      : "font-normal text-slate-700 hover:bg-slate-50 hover:text-indigo-600"
+  }`}
+>
 
                     <Icon
                       size={18}

@@ -1,11 +1,22 @@
-from fastapi import APIRouter , HTTPException,Request
+from fastapi import APIRouter, Request, HTTPException
 from app.database.thoughts import get_post_by_userId
+from app.auth.dependencies import get_current_user
 from app.database.thoughts import delete_post_by_post_id
 from app.auth.jwt import decode_jwt
 
 router = APIRouter()
 
 @router.get('/get/post')
+def get(request: Request):
+
+    user_id = get_current_user(request)
+
+    posts = get_post_by_userId(user_id)
+
+    return {
+        'message': 'post fetched successfully.',
+        'posts': posts
+}
 def get(request:Request):
     access_token = request.cookies.get('access_token')
     if not access_token:

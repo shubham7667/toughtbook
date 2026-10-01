@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import LeftSidebar from "./left_sidebar";
@@ -915,4 +914,3 @@ const ProfilePage = () => {
 };
 
 export default ProfilePage;
-

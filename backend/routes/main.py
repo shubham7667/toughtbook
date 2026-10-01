@@ -1,22 +1,27 @@
 from fastapi import FastAPI
 from .me import router
 from .login import route as login_router
+from .otp import router as otp_router
 from .post_thoughts import router as thought_router
 from starlette.middleware.sessions import SessionMiddleware
 from fastapi.middleware.cors import CORSMiddleware
 from .get_thought import router as get_post_router
+from .signup import router as signup_router
+from .interactions import router as interaction_router
 import os
 from dotenv import load_dotenv
 from .profile import router as update_dp_router
 from .edit_profile_route import router as edit_profile_router
 from .admin.thoughtbook_says import router as thoughtbook_says_router
 from .admin.me import router as admin_details_router
-from .follows.follow_routes import router as follow_router
-
-
+from .feed import router as feed_router
+from .search import router as search_router
+from .follows import router as follows_router
+# from .admin.thoughtbook_says import router as thoughtbook_says_router
 load_dotenv()
 
 app = FastAPI()
+
 
 # CORS
 app.add_middleware(
@@ -36,15 +41,21 @@ app.add_middleware(
 )
 
 # Routes
+app.include_router(otp_router)
 app.include_router(router)
 app.include_router(login_router)
 app.include_router(thought_router)
 app.include_router(get_post_router)
+app.include_router(signup_router)
+app.include_router(interaction_router)
 app.include_router(update_dp_router)
 app.include_router(edit_profile_router)
 app.include_router(thoughtbook_says_router)
 app.include_router(admin_details_router)
-app.include_router(follow_router)
+app.include_router(feed_router)
+app.include_router(search_router)
+app.include_router(follows_router)
+# app.include_router(thoughtbook_says_router)
 @app.get("/")
 def home():
     return {
